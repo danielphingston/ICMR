@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "test": "node --test nutrition.test.mjs storage.test.mjs"
+    "test": "node --test nutrition.test.mjs protocol.test.mjs storage.test.mjs"
   }
 }

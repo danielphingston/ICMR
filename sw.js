@@ -1,8 +1,8 @@
-const CACHE_NAME = 'nourish-shell-v1';
+const CACHE_NAME = 'nourish-shell-v2';
 const APP_BASE = new URL('./', self.registration.scope);
 const APP_SHELL = [
-  './', 'index.html', 'styles.css', 'app.js', 'nutrition.js', 'storage.js',
-  'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png',
+  './', 'index.html', 'styles.css', 'app.js', 'nutrition.js', 'protocol.js', 'storage.js',
+  'manifest.webmanifest', 'ui.js', 'protocol-app.js', 'icons/icon.svg', 'icons/icon-192.png',
   'icons/icon-512.png', 'icons/icon-maskable-512.png',
 ].map((path) => new URL(path, APP_BASE).href);
 const APP_SHELL_URLS = new Set(APP_SHELL);

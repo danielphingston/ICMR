@@ -1,0 +1,62 @@
+Software Developer Specification: Clinical Diet Protocol App
+1. System Overview
+This document outlines the core logic, formulas, and data structures required to build a clinical dietary computation application. The app allows practitioners to input patient anthropometric data and clinical conditions, calculate exact macronutrient targets, and distribute these targets into standard food portions across daily meals.
+2. Phase 1: Patient Input & Target Computation
+The application must first calculate the Total Energy Requirement (TER) and Macronutrient Splits.
+2.1 Variables & Inputs
+Patient Profile: Name, Age, Gender, Height (cm), Weight (kg).
+Clinical Notes: Free-text or tags (e.g., Prediabetes, Dyslipidemia, Renal Calculi).
+Activity Level Multiplier (kcal/kg):
+Sedentary = 25
+Moderate = 30
+Heavy = 35 to 40
+Macronutrient Split Percentages: Target CHO %, PRO %, FAT % (Must sum to 100%).
+2.2 Core Formulas
+BMI Calculation: Weight(kg) / (Height(m) * Height(m))
+Adjusted Body Weight (ABW): Required if BMI indicates Overweight/Obese. The app should allow manual override of the weight used for calculation (e.g., inputting 70kg ABW for a 75kg patient).
+Total Energy Requirement (TER): TER = Weight (or ABW) * Activity Level Multiplier
+Macronutrient Gram Targets:
+Target CHO (g) = (TER * CHO%) / 4
+Target PRO (g) = (TER * PRO%) / 4
+Target FAT (g) = (TER * FAT%) / 9
+3. Phase 2: The DDP Matrix (Daily Diet Prescription)
+The application must feature a real-time tracking matrix based on standard ICMR (Indian Council of Medical Research) portion sizes. As the user inputs the number of portions for a food group, the app calculates the resulting macros and subtracts them from the Target Macros.
+3.1 Standard Portion Constants
+[Table]
+Food Group | Portion Size | CHO (g) | PRO (g) | FAT (g)
+Cereals | 30g | 20 | 3 | 0
+Pulses | 30g | 17 | 7 | 0
+Milk & Curd | 100ml | 5 | 3.3 | 3
+GLV (Green Leafy Veg) | 100g | 3 | 3 | 0
+Other Vegetables | 100g | 5 | 1.5 | 0
+Roots & Tubers | 100g | 15 | 1 | 0
+Fruits | 100g | 10 | 0 | 0
+Meat / Fish | 50g | 0 | 10 | 3
+Eggs | 50g | 0 | 6.5 | 5
+Fats & Oils | 5g | 0 | 0 | 5
+Sugars & Jaggery | 5g | 5 | 0 | 0
+3.2 Major vs. Minor Carbohydrate Split Logic
+Minor CHO Sources: Milk & Dairy, GLV (Green Leafy Vegetables), OV (Other Vegetables), Roots & Tubers, Fruits, and Sugars.
+Logic Flow for Minor Sources: The app must explicitly prompt the practitioner to define a Minor CHO target (e.g., 70g) and then provide a UI to manually divide and allocate this exact gram amount across the specific minor categories: Roots & Tubers, GLV, OV, Fruits, Sugars, and Milk & Dairy.
+Major CHO Sources (Cereals & Pulses):
+Total Major CHO = Total CHO Target - Minor CHO Target
+The app will automatically calculate the optimal raw carbohydrate split for major sources using the standard 7/8 and 1/8 ratio:
+Cereals CHO Target = Total Major CHO * (7/8)
+Pulses CHO Target = Total Major CHO * (1/8)
+User Discretion: The practitioner has full discretion to divide the actual raw weights across meals to meet these resulting Cereals and Pulses CHO targets, without being constrained by fixed standard portion multipliers.
+4. Phase 3: Meal Portion Distribution
+Once the DDP Matrix totals match the Target Macros, the app must distribute these total portions across daily meals using a transpose grid.
+4.1 Transposed Matrix Structure
+Y-Axis (Rows): The 11 Food Groups.
+X-Axis (Columns): Configurable Meal Timings (e.g., Early Morning, Breakfast, Mid-Morning, Lunch, Evening, Dinner).
+Validation Logic: Sum(Row Values across all Columns) == Total Portions prescribed in the DDP Matrix for that Food Group.
+UI Behavior: The app should highlight row totals in green when they perfectly match the DDP prescription, and red when they over/under shoot.
+5. Phase 4: Output Generation
+The app must be able to export a finalized "Dietician Reference Document" for the patient.
+5.1 Export Template Structure
+Input Details: Patient bio, clinical notes.
+Anthropometry: BMI and Weight used.
+Targets: TER and Macro splits.
+Minor/Major Breakdown: Clinical rationale for the minor sources split.
+DDP Matrix (Raw Weights): E.g., "Cereals: 150g (5 portions)".
+Portion Division Table: The transposed grid showing portion allocations per meal.

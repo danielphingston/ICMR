@@ -7,8 +7,8 @@ const root = fileURLToPath(new URL('.', import.meta.url));
 const host = '127.0.0.1';
 const port = Number(process.env.PORT || 4173);
 const publicFiles = new Set([
-  'index.html', 'styles.css', 'app.js', 'nutrition.js', 'storage.js', 'sw.js',
-  'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png',
+  'index.html', 'styles.css', 'app.js', 'nutrition.js', 'protocol.js', 'storage.js', 'sw.js',
+  'manifest.webmanifest', 'ui.js', 'protocol-app.js', 'icons/icon.svg', 'icons/icon-192.png',
   'icons/icon-512.png', 'icons/icon-maskable-512.png',
 ]);
 const types = new Map([

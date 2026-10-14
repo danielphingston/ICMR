@@ -1,0 +1,51 @@
+Clinical Dietary Protocol Reference: Sajitha K M
+1. Input Details
+Name: Sajitha K M
+Age / Gender: 50 / Female
+Height: 154 cm (1.54 m)
+Weight: 75.75 kg (Adjusted Body Weight for protocol: 59 kg)
+Activity Level: Moderate (1 hr+ gym)
+Clinical Notes: Prediabetes (FBS 104 mg/dL), Dyslipidemia (LDL 152.4 mg/dL, HDL 37.6 mg/dL), Borderline Hyperuricemia (Uric Acid 6.3 mg/dL), Vitamin D Insufficiency, Visceral Fat Grade 16.
+2. BMI & Anthropometry
+Actual BMI: 31.9 (Obese - Asian Classification)
+Target / Adjusted Weight: Using Adjusted Body Weight (ABW) of 59 kg to prevent overfeeding fat mass and manage metabolic syndrome.
+3. Nutrient Distribution (TER: 1,770 kcal)
+Split Strategy: 45% CHO | 25% PRO | 30% FAT|---|199 g
+Protein (25%): 111 g
+Fat (30%): 59 g
+Dietary Fiber Target: 35.4 g
+4. Nutrient Range & Allowances
+Energy: 1670 - 1870 kcal (Target: 1770 ± 100)
+Protein: 101 - 121 g (Target: 111 ± 10)
+Fat: 54 - 64 g (Target: 59 ± 5)
+Carbohydrates: 174 - 224 g (Target: 199 ± 25)
+Fiber: 30.4 - 50.4 g (Target: 35.4 -5 to +15)
+5. Major and Minor CHO Splits
+Total Carbohydrate Target: 199 g
+Minor Sources Allocation (70 g): Milk & Curd (15g), GLV (5g), Other Vegetables (20g), Roots & Tubers (10g), Fruits (20g), Sugars & Jaggery (0g).
+Major Sources Allocation (129 g): Cereals CHO Target: 112.87 g (Raw weight: 169.3 g) | Pulses CHO Target: 16.12 g (Raw weight: 28.4 g)
+6. DDP Matrix (Raw Weights)
+Cereals: 169.3 g (Distributed by discretion)
+Pulses: 28.4 g (Distributed by discretion)
+Milk & Curd: 300 ml (3 portions)
+GLV: 100 g (1 portion)
+Other Vegetables: 300 g (3 portions)
+Roots & Tubers: 100 g (1 portion)
+Fruits: 200 g (2 portions)
+Lean Meat / Fish: 200 g (4 portions)
+Eggs: 150 g (3 portions)
+Fats & Oils: 20 g (4 portions)
+Sugars & Jaggery: 0 g (0 portions)
+7. Portion Division
+[Table]
+Food Group | Breakfast | Lunch | Evening | Dinner
+Cereals | 2 | 2 | 0 | 1
+Pulses | 1 | 0 | 0 | 1
+Milk & Curd | 1 | 0 | 1 | 1
+GLV | 0 | 1 | 0 | 0
+Other Veg | 1 | 1 | 0 | 1
+Roots & Tubers | 0 | 1 | 0 | 0
+Fruits | 0 | 0 | 2 | 0
+Meat / Fish | 0 | 2 | 0 | 2
+Eggs | 3 | 0 | 0 | 0
+Fats & Oils | 1 | 1 | 0 | 2

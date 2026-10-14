@@ -4,7 +4,7 @@ const BACKUP_VERSION = 1;
 const forbiddenKeys = new Set(['__proto__', 'prototype', 'constructor']);
 const dateFields = new Set([
   'date', 'dob', 'dateofbirth', 'createdat', 'updatedat', 'reviewedat',
-  'exportedat', 'followupdate', 'labdate', 'archivedat',
+  'exportedat', 'followupdate', 'labdate', 'archivedat', 'protocolreviewedat',
 ]);
 
 function storage() {
@@ -113,29 +113,155 @@ function validateOptionalShape(patient, label) {
   }
   if (patient.history !== undefined) {
     if (!Array.isArray(patient.history)) throw new Error(`${label}.history must be an array.`);
-    patient.history.forEach((entry, index) => {
-      const entryLabel = `${label}.history[${index}]`;
-      if (!entry || typeof entry !== 'object' || Array.isArray(entry) || Object.getPrototypeOf(entry) !== Object.prototype) {
-        throw new Error(`${entryLabel} must be an object.`);
-      }
-      if (typeof entry.reviewedAt !== 'string' || !isValidDate(entry.reviewedAt)) {
-        throw new Error(`${entryLabel}.reviewedAt must be a valid ISO date-time.`);
-      }
-      for (const key of ['energy', 'protein']) {
-        if (typeof entry[key] !== 'number' || !Number.isFinite(entry[key])) {
-          throw new Error(`${entryLabel}.${key} must be a finite number.`);
-        }
-      }
-      const snapshot = entry.snapshot;
-      if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot) || Object.getPrototypeOf(snapshot) !== Object.prototype) {
-        throw new Error(`${entryLabel}.snapshot must be a patient object.`);
-      }
-      validatePatientRecord(snapshot, `${entryLabel}.snapshot`, { historyMustBeEmpty: true });
+    validateReviewHistory(patient.history, `${label}.history`, { energyAndProtein: true, historyMustBeEmpty: true });
+  }
+  if (patient.protocolVersion !== undefined && patient.protocolVersion !== 1) {
+    throw new Error(`${label}.protocolVersion must be 1.`);
+  }
+  if (patient.protocol !== undefined) validateProtocol(patient.protocol, `${label}.protocol`);
+  if (patient.ddp !== undefined) validateNumberMap(patient.ddp, `${label}.ddp`);
+  if (patient.distribution !== undefined) validateDistributionShape(patient.distribution, `${label}.distribution`);
+  if (patient.protocolMeals !== undefined) validateProtocolMeals(patient.protocolMeals, `${label}.protocolMeals`);
+  if (patient.protocolHistory !== undefined) {
+    if (!Array.isArray(patient.protocolHistory)) throw new Error(`${label}.protocolHistory must be an array.`);
+    validateReviewHistory(patient.protocolHistory, `${label}.protocolHistory`, {
+      energyAndProtein: true,
+      protocolHistoryMustBeEmpty: true,
     });
   }
 }
 
-function validatePatientRecord(patient, label, { historyMustBeEmpty = false } = {}) {
+function validateReviewHistory(history, path, snapshotOptions = {}) {
+  history.forEach((entry, index) => {
+    const entryPath = `${path}[${index}]`;
+    requirePlainObject(entry, entryPath);
+    if (typeof entry.reviewedAt !== 'string' || !isValidDate(entry.reviewedAt)) {
+      throw new Error(`${entryPath}.reviewedAt must be a valid ISO date-time.`);
+    }
+    if (snapshotOptions.energyAndProtein) {
+      for (const key of ['energy', 'protein']) {
+        if (typeof entry[key] !== 'number' || !Number.isFinite(entry[key])) {
+          throw new Error(`${entryPath}.${key} must be a finite number.`);
+        }
+      }
+    }
+    const snapshot = entry.snapshot;
+    requirePlainObject(snapshot, `${entryPath}.snapshot`);
+    validatePatientRecord(snapshot, `${entryPath}.snapshot`, {
+      historyMustBeEmpty: true,
+      protocolHistoryMustBeEmpty: true,
+    });
+  });
+}
+
+function validateDistributionShape(value, path) {
+  requirePlainObject(value, path);
+  for (const [foodId, allocation] of Object.entries(value)) {
+    validateNumberMap(allocation, `${path}.${foodId}`);
+  }
+}
+
+function validateProtocolMeals(meals, path) {
+  if (!Array.isArray(meals) || meals.length < 1 || meals.length > 8) {
+    throw new Error(`${path} must contain between 1 and 8 meals.`);
+  }
+  const ids = new Set();
+  meals.forEach((meal, index) => {
+    const mealPath = `${path}[${index}]`;
+    requirePlainObject(meal, mealPath);
+    if (typeof meal.id !== 'string' || !meal.id.trim()) throw new Error(`${mealPath}.id must be a nonblank string.`);
+    if (ids.has(meal.id.trim())) throw new Error(`${mealPath}.id duplicates a meal id.`);
+    ids.add(meal.id.trim());
+    for (const key of ['label', 'time', 'note']) {
+      if (typeof meal[key] !== 'string') throw new Error(`${mealPath}.${key} must be a string.`);
+    }
+  });
+}
+
+function requirePlainObject(value, path) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype) {
+    throw new Error(`${path} must be an object.`);
+  }
+}
+
+function validateNullableNumbers(object, keys, path) {
+  for (const key of keys) {
+    const value = object[key];
+    if (value !== undefined && value !== null && (typeof value !== 'number' || !Number.isFinite(value))) {
+      throw new Error(`${path}.${key} must be a finite number or null.`);
+    }
+  }
+}
+
+function validateNumberMap(value, path) {
+  requirePlainObject(value, path);
+  for (const [key, item] of Object.entries(value)) {
+    if (item !== null && (typeof item !== 'number' || !Number.isFinite(item))) {
+      throw new Error(`${path}.${key} must be a finite number or null.`);
+    }
+  }
+}
+
+function validateProtocol(protocol, path) {
+  requirePlainObject(protocol, path);
+  if (protocol.protocolVersion !== undefined && protocol.protocolVersion !== 1) {
+    throw new Error(`${path}.protocolVersion must be 1.`);
+  }
+  validateNullableNumbers(protocol, [
+    'calculationWeight', 'activityFactor', 'carbs', 'protein', 'fat',
+    'minorCHO', 'fiberTarget',
+  ], path);
+  if (protocol.roundMacroTargets !== undefined && typeof protocol.roundMacroTargets !== 'boolean') {
+    throw new Error(`${path}.roundMacroTargets must be boolean.`);
+  }
+  if (protocol.matchMode !== undefined && !['allowances', 'exact'].includes(protocol.matchMode)) {
+    throw new Error(`${path}.matchMode must be allowances or exact.`);
+  }
+  if (protocol.minorAllocations !== undefined) validateNumberMap(protocol.minorAllocations, `${path}.minorAllocations`);
+  if (protocol.tolerances !== undefined) {
+    requirePlainObject(protocol.tolerances, `${path}.tolerances`);
+    validateNullableNumbers(protocol.tolerances, ['energy', 'carbs', 'protein', 'fat'], `${path}.tolerances`);
+  }
+  if (protocol.settings !== undefined) {
+    requirePlainObject(protocol.settings, `${path}.settings`);
+    const settings = protocol.settings;
+    validateNullableNumbers(settings, [
+      'calculationWeight', 'activityFactor', 'carbs', 'protein', 'fat',
+      'minorCHO', 'fiberTarget',
+    ], `${path}.settings`);
+    for (const [key, expectedType] of [['roundMacroTargets', 'boolean']]) {
+      if (settings[key] !== undefined && typeof settings[key] !== expectedType) {
+        throw new Error(`${path}.settings.${key} must be ${expectedType}.`);
+      }
+    }
+    if (settings.matchMode !== undefined && !['allowances', 'exact'].includes(settings.matchMode)) {
+      throw new Error(`${path}.settings.matchMode must be allowances or exact.`);
+    }
+    if (settings.minorAllocations !== undefined) {
+      validateNumberMap(settings.minorAllocations, `${path}.settings.minorAllocations`);
+    }
+    if (settings.tolerances !== undefined) {
+      requirePlainObject(settings.tolerances, `${path}.settings.tolerances`);
+      validateNullableNumbers(settings.tolerances, ['energy', 'carbs', 'protein', 'fat'], `${path}.settings.tolerances`);
+    }
+  }
+  if (protocol.ddp !== undefined) validateNumberMap(protocol.ddp, `${path}.ddp`);
+  if (protocol.distribution !== undefined) {
+    validateDistributionShape(protocol.distribution, `${path}.distribution`);
+  }
+  if (protocol.protocolMeals !== undefined) {
+    validateProtocolMeals(protocol.protocolMeals, `${path}.protocolMeals`);
+  }
+  if (protocol.protocolHistory !== undefined) {
+    if (!Array.isArray(protocol.protocolHistory)) throw new Error(`${path}.protocolHistory must be an array.`);
+    validateReviewHistory(protocol.protocolHistory, `${path}.protocolHistory`, {
+      energyAndProtein: true,
+      protocolHistoryMustBeEmpty: true,
+    });
+  }
+}
+
+function validatePatientRecord(patient, label, { historyMustBeEmpty = false, protocolHistoryMustBeEmpty = false } = {}) {
   if (!patient || typeof patient !== 'object' || Array.isArray(patient) || Object.getPrototypeOf(patient) !== Object.prototype) {
     throw new Error(`${label} must be a plain patient object.`);
   }
@@ -146,6 +272,12 @@ function validatePatientRecord(patient, label, { historyMustBeEmpty = false } = 
   if (typeof patient.name !== 'string' || !patient.name.trim()) throw new Error(`${label} needs a nonblank string name.`);
   if (historyMustBeEmpty && patient.history !== undefined && patient.history.length > 0) {
     throw new Error(`${label}.history must be empty inside a saved snapshot.`);
+  }
+  if (protocolHistoryMustBeEmpty && patient.protocolHistory !== undefined && patient.protocolHistory.length > 0) {
+    throw new Error(`${label}.protocolHistory must be empty inside a saved snapshot.`);
+  }
+  if (protocolHistoryMustBeEmpty && patient.protocol?.protocolHistory !== undefined && patient.protocol.protocolHistory.length > 0) {
+    throw new Error(`${label}.protocol.protocolHistory must be empty inside a saved snapshot.`);
   }
   validateOptionalShape(patient, label);
   validateJsonValue(patient, label);
