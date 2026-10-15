@@ -11,7 +11,7 @@ Use the same browser profile and address each time: localhost and 127.0.0.1 have
 ## Clinical workflow
 
 1. Add a patient and record height, actual weight, age, sex, activity, clinical notes and optional labs.
-2. Select the calculation weight. BMI uses actual weight. At BMI >=23, a clinician-entered weight is required; the supplied documents do not define an automatic ABW formula.
+2. BMI uses actual weight. IBW is height in metres squared × 22.5; ABW is IBW + 0.25 × (actual − IBW). The default weight is actual below BMI 23 and ABW at BMI 23 or above, rounded to the nearest kg as in the Sajitha example. Choose actual, IBW, ABW or a custom weight when clinically appropriate.
 3. Set macro percentages, minor CHO target and its six allocations. Review the remaining major CHO, split 7/8 to cereals and 1/8 to pulses.
 4. Apply CHO allocations to seed the 11-row DDP. Edit raw weights or fractional portions while watching nutrient totals and residuals. Choose meat/fish, eggs and oil amounts clinically.
 5. Configure 1–8 meals. Independently allocate each food row: cereals/pulses in raw grams, other foods in portions. All cells require a number, including explicit zero. Every row must reconcile.
@@ -29,7 +29,7 @@ The active implementation follows the two supplied documents, not the first vers
 - Exact macro values are retained and visible. Disable whole-gram rounding when using exact-match acceptance, since rounded macros can yield energy different from TER.
 - The fixed 11-food exchange matrix is transcribed from the developer specification. The app does not claim independent verification of these exact exchange constants as an official ICMR protocol.
 - Default DDP allowances: energy ±100 kcal, CHO ±25 g, protein ±10 g, fat ±5 g. Exact mode uses ±0.1 g/kcal. CHO-source reconciliation uses 0.1 g and meal-row matching uses 0.0001 raw g/portion. Numeric display rounding does not change stored inputs.
-- BMI: WHO underweight threshold 18.5; Asian Indian action points 23 (overweight) and 25 (obesity), explicitly labelled.
+- BMI: WHO underweight threshold 18.5; Asian Indian action points 23 (overweight) and 25 (obesity), explicitly labelled. The recommended weight basis is actual below BMI 23 and ABW at BMI >=23. The Sajitha ABW is about 58.96 kg and is rounded to 59 kg for TER.
 - Adult scope only; pregnancy and lactation are withheld from automated calculations. Labs are recorded for clinician interpretation without automatic diagnosis or treatment changes.
 - Fibre may be recorded as a target, but achieved fibre is unavailable because the provided matrix has no fibre constants.
 

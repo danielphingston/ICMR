@@ -208,9 +208,12 @@ function validateProtocol(protocol, path) {
     throw new Error(`${path}.protocolVersion must be 1.`);
   }
   validateNullableNumbers(protocol, [
-    'calculationWeight', 'activityFactor', 'carbs', 'protein', 'fat',
+    'calculationWeight', 'customWeight', 'activityFactor', 'carbs', 'protein', 'fat',
     'minorCHO', 'fiberTarget',
   ], path);
+  if (protocol.weightMode !== undefined && !['recommended', 'actual', 'ibw', 'abw', 'custom'].includes(protocol.weightMode)) {
+    throw new Error(`${path}.weightMode must be recommended, actual, ibw, abw or custom.`);
+  }
   if (protocol.roundMacroTargets !== undefined && typeof protocol.roundMacroTargets !== 'boolean') {
     throw new Error(`${path}.roundMacroTargets must be boolean.`);
   }
@@ -226,9 +229,12 @@ function validateProtocol(protocol, path) {
     requirePlainObject(protocol.settings, `${path}.settings`);
     const settings = protocol.settings;
     validateNullableNumbers(settings, [
-      'calculationWeight', 'activityFactor', 'carbs', 'protein', 'fat',
+      'calculationWeight', 'customWeight', 'activityFactor', 'carbs', 'protein', 'fat',
       'minorCHO', 'fiberTarget',
     ], `${path}.settings`);
+    if (settings.weightMode !== undefined && !['recommended', 'actual', 'ibw', 'abw', 'custom'].includes(settings.weightMode)) {
+      throw new Error(`${path}.settings.weightMode must be recommended, actual, ibw, abw or custom.`);
+    }
     for (const [key, expectedType] of [['roundMacroTargets', 'boolean']]) {
       if (settings[key] !== undefined && typeof settings[key] !== expectedType) {
         throw new Error(`${path}.settings.${key} must be ${expectedType}.`);

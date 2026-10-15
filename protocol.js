@@ -40,7 +40,9 @@ const DEFAULT_MINOR_ALLOCATIONS = Object.freeze({
 });
 
 export const PROTOCOL_DEFAULTS = Object.freeze({
+  weightMode: 'recommended',
   calculationWeight: null,
+  customWeight: null,
   activityFactor: 30,
   carbs: 45,
   protein: 25,
@@ -104,8 +106,13 @@ function validateSettings(settings, errors, activity) {
   if (input.activityFactor === undefined) {
     s.activityFactor = activity === 'sedentary' ? 25 : activity === 'heavy' ? 35 : 30;
   }
-  if (s.calculationWeight !== null && (!isFiniteNumber(s.calculationWeight) || s.calculationWeight <= 0 || s.calculationWeight > 500)) {
-    errors.push('Calculation weight override must be null or a finite number above 0 and at most 500 kg.');
+  if (!['recommended', 'actual', 'ibw', 'abw', 'custom'].includes(s.weightMode)) {
+    errors.push('Weight mode must be recommended, actual, IBW, ABW or custom.');
+  }
+  for (const [key, value] of [['customWeight', s.customWeight], ['calculationWeight', s.calculationWeight]]) {
+    if (value !== null && (!isFiniteNumber(value) || value <= 0 || value > 500)) {
+      errors.push(`${key} must be null or a finite number above 0 and at most 500 kg.`);
+    }
   }
   if (!isFiniteNumber(s.activityFactor) || !VALID_ACTIVITY_FACTORS(s.activityFactor)) {
     errors.push('Activity factor must be 25, 30, or a number from 35 to 40 kcal/kg/day.');
@@ -364,16 +371,39 @@ export function calculateProtocol(patient, settings) {
   const patientState = validatePatient(p, errors, warnings);
   const { settings: s } = validateSettings(settings, errors, p.activity);
   const overweight = patientState.bmi !== null && patientState.bmi >= 23;
+  const heightM = isFiniteNumber(p.height) && p.height > 0 ? p.height / 100 : null;
+  const idealBodyWeightKg = heightM === null ? null : heightM ** 2 * 22.5;
+  const adjustedBodyWeightKg = idealBodyWeightKg !== null && isFiniteNumber(p.weight)
+    ? idealBodyWeightKg + 0.25 * (p.weight - idealBodyWeightKg)
+    : null;
+  // Older saved plans had only calculationWeight. Keep that clinician value as a custom selection.
+  const weightMode = settings?.weightMode === undefined && isFiniteNumber(s.calculationWeight)
+    ? 'custom'
+    : s.weightMode;
   let calculationWeightKg = null;
   let weightSource = null;
-  if (isFiniteNumber(s.calculationWeight) && s.calculationWeight > 0) {
-    calculationWeightKg = s.calculationWeight;
-    weightSource = 'clinician-entered override';
-  } else if (!overweight && isFiniteNumber(p.weight) && p.weight > 0) {
+  const defaultWeight = overweight && adjustedBodyWeightKg !== null ? Math.round(adjustedBodyWeightKg) : p.weight;
+  if (weightMode === 'recommended') {
+    calculationWeightKg = defaultWeight;
+    weightSource = overweight ? 'recommended adjusted body weight (rounded to nearest kg)' : 'recommended actual body weight';
+  } else if (weightMode === 'actual') {
     calculationWeightKg = p.weight;
     weightSource = 'actual body weight';
-  } else if (overweight) {
-    errors.push('Asian Indian BMI is 23 or above; enter the clinician-selected calculation weight. No adjusted-weight formula is applied automatically.');
+  } else if (weightMode === 'ibw') {
+    calculationWeightKg = idealBodyWeightKg;
+    weightSource = 'ideal body weight (target BMI 22.5)';
+  } else if (weightMode === 'abw') {
+    calculationWeightKg = adjustedBodyWeightKg === null ? null : Math.round(adjustedBodyWeightKg);
+    weightSource = 'adjusted body weight (rounded to nearest kg)';
+  } else if (weightMode === 'custom') {
+    calculationWeightKg = settings?.weightMode === undefined ? s.calculationWeight : (s.customWeight ?? s.calculationWeight);
+    weightSource = 'custom clinician-entered weight';
+  }
+  if (!isFiniteNumber(calculationWeightKg) || calculationWeightKg <= 0) {
+    calculationWeightKg = null;
+    errors.push(weightMode === 'custom'
+      ? 'Enter a valid custom calculation weight.'
+      : 'Complete valid height and actual weight measurements to calculate the selected weight basis.');
   }
   if (!patientState.isAdult) errors.push('Protocol energy and macro targets are available for adults aged 18 years and older.');
   if (p.pregnant === true || p.lactating === true) errors.push('Automated protocol targets are withheld during pregnancy or lactation; clinician review is required.');
@@ -450,9 +480,12 @@ export function calculateProtocol(patient, settings) {
       referenceCategory: 'Asian Indian action thresholds',
       calculationWeightKg,
       weightSource,
+      weightMode,
+      idealBodyWeightKg: idealBodyWeightKg === null ? null : round6(idealBodyWeightKg),
+      adjustedBodyWeightKg: adjustedBodyWeightKg === null ? null : round6(adjustedBodyWeightKg),
       actualWeightKg: isFiniteNumber(p.weight) ? p.weight : null,
-      clinicianOverrideRequired: overweight && !isFiniteNumber(s.calculationWeight),
-      adjustedWeightNote: 'The clinician enters calculation weight when needed. This protocol does not derive an adjusted body weight.',
+      clinicianOverrideRequired: false,
+      adjustedWeightNote: 'IBW = height in metres squared × 22.5. ABW = IBW + 0.25 × (actual − IBW). Recommended mode uses actual weight below BMI 23 and ABW rounded to the nearest kilogram at BMI 23 or above.',
     },
     energy: { activityFactor: s.activityFactor, ter, unit: 'kcal/day', formula: 'calculation weight (kg) × clinician-selected activity factor (kcal/kg/day)' },
     macros: {

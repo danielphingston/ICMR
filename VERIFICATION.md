@@ -19,3 +19,12 @@
 ## Limits
 
 PWA assets, manifest and offline reload were checked; OS-level installation was not performed. Print/PDF report content and print stylesheet are implemented, but no final printed PDF was visually audited in this revision. Achieved fibre cannot be calculated from the supplied constants. No external hosting, cloud storage or patient upload was added.
+
+
+## Weight selection update · 15 October 2026
+
+- IBW now uses height in metres squared × 22.5. ABW now uses IBW + 0.25 × (actual − IBW).
+- Recommended mode selects actual weight below BMI 23 and ABW at BMI 23 or above. ABW is rounded to the nearest kg for TER, matching the supplied Sajitha example.
+- Clinicians can select actual, IBW, ABW, or custom weight. Legacy explicit calculation weights are preserved as custom selections.
+- The Sajitha example derives IBW 53.361 kg and ABW 58.95825 kg (58.96 displayed), with 59 kg used for TER.
+- JavaScript syntax was checked after the change. The regression suite was not rerun for this update.

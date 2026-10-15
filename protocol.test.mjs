@@ -46,14 +46,14 @@ const referenceQuantities = {
   sugar: 0,
 };
 
-test('reference assessment calculates Asian Indian BMI, manual calculation weight and exact/rounded targets', () => {
+test('reference assessment calculates Asian Indian BMI, selected calculation weight and exact/rounded targets', () => {
   const result = calculateProtocol(referencePatient, referenceSettings);
   assert.equal(result.eligible, true);
   assert.equal(result.anthropometrics.bmi, 31.9);
   assert.equal(result.anthropometrics.asianIndianCategory, 'Obesity');
   assert.equal(result.anthropometrics.categorySource, 'Asian Indian Consensus Group action thresholds (overweight 23, obesity 25 kg/m²); standard adult underweight threshold <18.5 kg/m².');
   assert.equal(result.anthropometrics.calculationWeightKg, 59);
-  assert.equal(result.anthropometrics.weightSource, 'clinician-entered override');
+  assert.equal(result.anthropometrics.weightSource, 'custom clinician-entered weight');
   assert.equal(result.energy.ter, 1770);
   assert.deepEqual(result.macros.exactGrams, { carbs: 199.125, protein: 110.625, fat: 59 });
   assert.deepEqual(result.macros.roundedGrams, { carbs: 199, protein: 111, fat: 59 });
@@ -68,19 +68,24 @@ test('reference assessment calculates Asian Indian BMI, manual calculation weigh
   assert.equal(result.fiber.actual, null, 'fiber is not fabricated from the macro matrix');
 });
 
-test('overweight patients require clinician-entered calculation weight and never get formula-derived ABW', () => {
+test('BMI recommendations use actual weight below 23 and formula-derived ABW from 23', () => {
   const result = calculateProtocol(referencePatient, { ...referenceSettings, calculationWeight: null });
-  assert.equal(result.eligible, false);
-  assert.equal(result.energy.ter, null);
-  assert.equal(result.macros.targetGrams, null);
-  assert.equal(result.anthropometrics.calculationWeightKg, null);
-  assert.equal(result.anthropometrics.clinicianOverrideRequired, true);
-  assert.ok(result.errors.some((error) => error.includes('No adjusted-weight formula is applied automatically')));
+  assert.equal(result.eligible, true);
+  assert.equal(result.anthropometrics.weightMode, 'recommended');
+  assert.equal(result.anthropometrics.idealBodyWeightKg, 53.361);
+  assert.equal(result.anthropometrics.adjustedBodyWeightKg, 58.95825);
+  assert.equal(result.anthropometrics.calculationWeightKg, 59);
+  assert.equal(result.anthropometrics.weightSource, 'recommended adjusted body weight (rounded to nearest kg)');
+  assert.equal(result.energy.ter, 1770);
+  assert.equal(result.anthropometrics.clinicianOverrideRequired, false);
 
   const underThreshold = calculateProtocol({ ...referencePatient, weight: 52 }, { ...referenceSettings, calculationWeight: null });
   assert.equal(underThreshold.anthropometrics.asianIndianCategory, 'Normal');
   assert.equal(underThreshold.anthropometrics.calculationWeightKg, 52);
   assert.equal(underThreshold.anthropometrics.weightSource, 'actual body weight');
+  const underweight = calculateProtocol({ ...referencePatient, weight: 40 }, { ...referenceSettings, calculationWeight: null });
+  assert.equal(underweight.anthropometrics.asianIndianCategory, 'Underweight');
+  assert.equal(underweight.anthropometrics.calculationWeightKg, 40);
 });
 
 test('BMI action thresholds and activity factors respect the selected activity level', () => {
